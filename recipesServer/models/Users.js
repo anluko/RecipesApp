@@ -29,9 +29,13 @@ const Users = sequelize.define('Users', {
       type: DataTypes.INTEGER,
       allowNull: true,
     }, 
+    ImageUrl: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    }, 
   },
   {
-    schema: 'recipesSchema',
+    schema: 'recipeSchema',
     tableName: 'Users',
     timestamps: false
   });

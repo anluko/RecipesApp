@@ -17,13 +17,12 @@ export default function App({ navigation }) {
       setIsLoading(false);
 
       if (dataToken) {
-        navigation.navigate('Main', { userId: jwtDecode(dataToken) });
+        navigation.navigate('Main', jwtDecode(dataToken));
       }
     } catch (error) {
       setIsLoading(false);
-      console.log('Ошибка получения токена: ', error)
+      console.warn('Ошибка получения токена: ', error)
     }
-    
   };
 
   if (isLoading) {
