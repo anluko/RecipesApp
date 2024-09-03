@@ -1,6 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import { StyleSheet, Text, SafeAreaView, View, Image, Platform, Button, TouchableOpacity } from 'react-native';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
 import { userFind } from '../api/apiUser';
 
@@ -10,12 +12,19 @@ export default function Account({ navigation, route }) {
   const { userId } = route.params || {};
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('');
+  const [userDiets, setUserDiets] = useState([]);
+  const [diets, setDiets] = useState([]);
+  const [userCurrentDiets, setUserCurrentDiets] = useState([]);
 
   useEffect(() => { 
     if (userId) {
       loadUser(userId);
     }
   }, [userId]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -28,7 +37,7 @@ export default function Account({ navigation, route }) {
         setIconVisibility(false);
       }
     }
-  }, [user])
+  }, [user]);
 
   const loadUser = async (id) => {
     userFind( id )
@@ -43,6 +52,28 @@ export default function Account({ navigation, route }) {
       });
   };
 
+  const fetchData = async () => {  
+    try {
+      const userDietsResponse =  await axios.get('http://192.168.1.7:8080/getUserDiets');
+      const dietsResponse =  await axios.get('http://192.168.1.7:8080/dietLabels');
+
+      if (userDietsResponse.status === 201) {
+        setUserDiets(userDietsResponse.data);
+      }
+      
+      if (dietsResponse.status === 201) {
+        setDiets(dietsResponse.data);
+      }
+
+      const userDietIds = userDietsResponse.data
+        .filter(userDiet => userDiet.UserId === userId) 
+        .map(userDiet => userDiet.DietLabelId);  
+
+      const filterDiets = dietsResponse.data.filter(diet => userDietIds.includes(diet.Id));
+      setUserCurrentDiets(filterDiets);
+    } catch(error) { console.error(error) }
+  }
+
   const userExit = async () => {
     SecureStore.setItemAsync('AccessToken', '')
       .then(() => {
@@ -53,33 +84,68 @@ export default function Account({ navigation, route }) {
       });
   }
 
+  
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
   return ( 
-    <SafeAreaView style = { styles.container }>
+    <View style = { styles.container }>
       <View style = { styles.imageView }>
         {iconVisibility && <FontAwesome6 style = { styles.userIcon } name = "user-circle" size = {140} />}
         {imageVisibility && <Image style = { styles.userImage } source = { { uri: (user) ? user.ImageUrl : null }}/>}
         <Text style = { styles.text } >{ (userName) ? userName : 'Username' } </Text>
       </View>
 
-      <View style = { styles.userGenderView }> 
+      <View style = { styles.userInfoView }> 
         <Text style = { styles.userInfoLabel }>Пол</Text>
         <Text style = { styles.userInfoText }>{(user) ? user.Gender : 'none' }</Text>
       </View>
 
-      <View style = { styles.userWeightView }> 
+      <View style = { styles.userInfoView }> 
         <Text style = { styles.userInfoLabel }>Вес</Text>
         <Text style = { styles.userInfoText }>{(user) ? user.Weight : 'none' }</Text>
       </View>
 
-      <View style = { styles.userGrowthView }> 
+      <View style = { styles.userInfoView }> 
         <Text style = { styles.userInfoLabel }>Рост</Text>
         <Text style = { styles.userInfoText }>{(user) ? user.Growth : 'none' }</Text>
+      </View>
+
+      <View style = { styles.userInfoView }> 
+        <Text style = { styles.userInfoLabel }>Диеты</Text>
+        <View style = { styles.dietList }>
+          {userCurrentDiets.length > 0 ? (
+            userCurrentDiets.map((diet, index) => (
+              <Text key = {index} style = {styles.userDietText}>
+                {diet.Label}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.userInfoText}>Нет диет</Text>
+          )}
+        </View>
       </View>
 
       <TouchableOpacity style = { styles.exitBtn } onPress = { () => userExit() }>
         <Text style = { styles.exitText }>Выйти</Text> 
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -88,7 +154,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageView: {
-    marginTop: Platform.OS === 'android' ? 60 : 15,
     width: '*',
     height: '*',
     backgroundColor: '#cacce8',
@@ -98,6 +163,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 15,
   },
   userImage: {
+    marginTop: Platform.OS === 'android' ? 50 : 25,
     padding: 20,
     marginVertical: 10,
     width: 180,
@@ -105,6 +171,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   userIcon: {
+    marginTop: Platform.OS === 'android' ? 50 : 25,
     padding: 20,
     marginVertical: 10,
     width: 180,
@@ -116,12 +183,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 10
   },
-  userGenderView: {
+  userInfoView: {
     alignItems: 'center',
     justifyContent: 'space-between',
     flexDirection: 'row',
     marginHorizontal: 15,
-    marginTop: 20,
+    marginTop: 15,
     borderWidth: 1,
     borderRadius: 15
   },
@@ -139,23 +206,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 10
   },
-  userWeightView: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    marginHorizontal: 15,
-    marginTop: 15,
-    borderWidth: 1,
-    borderRadius: 15
+  userDietText: {
+    fontFamily: 'mw-light',
+    fontWeight: '10',
+    textAlign: 'right',
+    fontSize: 14,
+    padding: 5,
+    marginRight: 10,
   },
-  userGrowthView: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    marginHorizontal: 15,
-    marginTop: 15,
-    borderWidth: 1,
-    borderRadius: 15
+  dietList: {
+    flexDirection: 'column', 
   },
   exitBtn: {
     justifyContent: 'center',

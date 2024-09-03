@@ -1,17 +1,50 @@
-import React, {useState, useEffect} from 'react';
-import { createBottomTabNavigator, CreateBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import Ionics from 'react-native-vector-icons/Ionicons';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Home from './Home';
 import Search from './Search';
 import Account from './Account';
-import Recipe from './UserRecipes'
+import Recipe from './UserRecipes';
+import RecipeInfo from './RecipeInfo';
+import RecipeListItem from './RecipeListItem';
+
 
 const Tab = createBottomTabNavigator();
+const RecipeTab = createStackNavigator();
+
+function RecipeStackScreen({ navigation, route }) {
+  return (
+    <RecipeTab.Navigator>
+      <RecipeTab.Screen
+        name = "Список рецептов"
+        component = { Recipe }
+        initialParams = { route.params }
+        options = {{
+          headerShown: false
+        }}>
+      </RecipeTab.Screen>
+      <RecipeTab.Screen
+        name = "Лист рецепта"
+        component = { RecipeListItem }
+        options = {{
+          headerShown: false
+        }}>
+      </RecipeTab.Screen>
+      <RecipeTab.Screen
+        name = "Про рецепт"
+        component = { RecipeInfo }
+        options = {{
+          headerShown: false
+        }}>
+      </RecipeTab.Screen>
+    </RecipeTab.Navigator>
+  )
+}
 
 export default function Main({ navigation, route }) {
-
   return ( 
       <Tab.Navigator 
         initialRouteName = { 'Home' }
@@ -53,31 +86,30 @@ export default function Main({ navigation, route }) {
           tabBarInactiveTintColor: '#676985',
         })}
       >
-
           <Tab.Screen 
-            name = {'Главная'} 
-            component = {Home} 
-            initialParams = {route.params}
+            name = { 'Главная' } 
+            component = { Home } 
+            initialParams = { route.params }
             options = {{
               headerShown: false
           }}/>
           <Tab.Screen 
-            name = {'Поиск'} 
-            component = {Search}
+            name = { 'Поиск' } 
+            component = { Search }
             options = {{
               headerShown: false
           }}/>
           <Tab.Screen 
-            name = {'Рецепты'} 
-            component = {Recipe}
-            initialParams = {route.params}
+            name = { 'Рецепты' } 
+            component = { RecipeStackScreen }
+            initialParams = { route.params }
             options = {{
               headerShown: false
           }}/>
           <Tab.Screen 
-            name = {'Аккаунт'} 
-            component = {Account}
-            initialParams = {route.params}
+            name = { 'Аккаунт' } 
+            component = { Account }
+            initialParams = { route.params }
             options = {{
               headerShown: false
           }}/>

@@ -23,8 +23,8 @@ export default function UserRecipes({ navigation, route }) {
   const fetchData = async () => {
     try {
       const recipesResponse = await axios.get('http://192.168.1.7:8080/getRecipes');
-      const recipeDietResponse =  await axios.get('http://192.168.1.7:8080/getRecipeDiets')
-      const userDietsResponse =  await axios.get('http://192.168.1.7:8080/getUserDiets')
+      const recipeDietResponse =  await axios.get('http://192.168.1.7:8080/getRecipeDiets');
+      const userDietsResponse =  await axios.get('http://192.168.1.7:8080/getUserDiets');
 
       if (recipesResponse.status === 201) {
         setRecipes(recipesResponse.data);

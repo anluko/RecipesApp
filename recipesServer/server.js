@@ -128,6 +128,16 @@ app.get('/getRecipes', async (req, res) => {
   res.status(201).json(recipes);
 });
 
+app.get('/getIngredients', async (req, res) => {
+  const ingredients = await Ingredient.findAll();
+  res.status(201).json(ingredients);
+});
+
+app.get('/getRecipeIngredients', async (req, res) => {
+  const recipeIngredients = await RecipeIngredient.findAll();
+  res.status(201).json(recipeIngredients);
+});
+
 app.get('/getRecipeDiets', async (req, res) => {
   const recipeDiets = await RecipeDietLabel.findAll();
   res.status(201).json(recipeDiets);

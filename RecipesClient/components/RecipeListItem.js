@@ -9,7 +9,7 @@ export default function RecipeListItem( { listItem, navigation } ) {
   });
 
   return (
-    <TouchableOpacity style = { styles.touchItem } >
+    <TouchableOpacity style = { styles.touchItem } onPress = { () => navigation.navigate('Про рецепт', listItem)}>
       <View style = { styles.itemsView }>
         <Image style = {styles.image} source = {{ uri: listItem.ImageUrl }} onError={(e) => console.log('Image load error', e.nativeEvent.error)}/> 
         

@@ -79,7 +79,7 @@ export default function Search({ navigation }) {
 
   return ( 
     <TouchableWithoutFeedback onPress = { Keyboard.dismiss } >
-      <SafeAreaView style = { styles.container }>
+      <View style = { styles.container }>
         <View style = { styles.elementsContainer }>
           <View style = { styles.searchAndFilterView }>
             <View style = { styles.searchView }> 
@@ -145,7 +145,7 @@ export default function Search({ navigation }) {
           )} 
           keyExtractor={(item) => item.Id.toString()}/>
         </View>}
-      </SafeAreaView>
+      </View>
     </TouchableWithoutFeedback>
   )
 }
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   searchView: {
-    marginTop: Platform.OS === 'android' ? 60 : 15,
+    marginTop: Platform.OS === 'android' ? 60 : 35,
     marginBottom: 15,
     borderWidth: 1,
     borderRadius: 10,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     padding: 10
   },
   filterIcon: {
-    marginTop: Platform.OS === 'android' ? 45 : 0,
+    marginTop: Platform.OS === 'android' ? 45 : 20,
     marginLeft: 10,
     color: 'black',
     borderWidth: 1.5,

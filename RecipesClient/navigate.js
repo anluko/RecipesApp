@@ -5,9 +5,7 @@ import StartScreen from './components/StartScreen';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Main from './components/Main'
-import Home from './components/Home'
-import Search from './components/Search'
-import Account from './components/Account'
+import RecipeInfo from './components/RecipeInfo'
 
 const Stack = createStackNavigator();
 
@@ -44,6 +42,7 @@ export default function Navigate() {
                     headerShown: false
                 }}
             />
+
         </Stack.Navigator>
     </NavigationContainer>
 }
