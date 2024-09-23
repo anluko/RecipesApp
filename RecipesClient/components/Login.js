@@ -1,11 +1,23 @@
-import React, {useState} from 'react';
-import { StyleSheet, View, Text, TextInput, Pressable, Animated } from 'react-native';
-import { userLogin } from '../api/apiUser';
-import { jwtDecode } from 'jwt-decode';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import Notification from '../notifications/notifications';
-import * as SecureStore from 'expo-secure-store'
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Animated,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
+import { userLogin } from "../api/apiUser";
+import { jwtDecode } from "jwt-decode";
+import { useDispatch } from "react-redux";
+import { setUser } from "../store/userReducer";
+import { userFind } from "../api/apiUser";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import Notification from "../notifications/notifications";
+import * as SecureStore from "expo-secure-store";
 
 export default function Login({ navigation }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(true);
@@ -13,44 +25,60 @@ export default function Login({ navigation }) {
   const [inputPassword, setInputPassword] = useState("");
   const [fadeSuccessAnim] = useState(new Animated.Value(0));
   const [fadeErrorAnim] = useState(new Animated.Value(0));
-  
-  const loginUser = async () => { 
+  const dispatch = useDispatch();
+
+  const loginUser = async () => {
     try {
-      if (inputLogin == '' || inputPassword == '') {
+      if (inputLogin == "" || inputPassword == "") {
         showNotification(fadeErrorAnim);
-        alert('Пожалуйста заполните все данные');
+        alert("Пожалуйста заполните все данные");
         return;
       }
 
       userLogin({
-        Login:inputLogin,
-        Password:inputPassword,
+        Login: inputLogin,
+        Password: inputPassword,
       })
         .then((result) => {
           if (result.status == 200) {
-            const user = result.data.user;
-            SecureStore.setItemAsync('AccessToken', result.data.token)
+            loadUser(jwtDecode(result.data.token).userId);
+
+            SecureStore.setItemAsync("AccessToken", result.data.token)
               .then(() => {
                 showNotification(fadeSuccessAnim);
-                setTimeout(() => {  
-                  navigation.navigate('Main', jwtDecode(result.data.token));
-                }, 1500);  
+                setTimeout(() => {
+                  navigation.navigate("Main");
+                }, 1500);
               })
-              .catch ((error) => {
+              .catch((error) => {
                 showNotification(fadeErrorAnim);
-                console.log('Ошибка при сохранении токена: ', error);
+                console.log("Ошибка при сохранении токена: ", error);
               });
           }
         })
-        .catch(err => {
+        .catch((err) => {
           showNotification(fadeErrorAnim);
-          console.error('Ошибка при входе: ', err);
+          console.error("Ошибка при входе: ", err);
         });
     } catch (error) {
       showNotification(fadeErrorAnim);
-      console.error('Ошибка при обработке пользователей:', error);
+      console.error("Ошибка при обработке пользователей:", error);
     }
-  }
+  };
+
+  const loadUser = async (id) => {
+    userFind(id)
+      .then((result) => {
+        if (!result.status === 200) {
+          console.warn("Не удалось загрузить пользователя");
+        }
+
+        dispatch(setUser(result.data));
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
 
   const showNotification = (fadeAnim) => {
     Animated.timing(fadeAnim, {
@@ -69,59 +97,75 @@ export default function Login({ navigation }) {
   };
 
   return (
-    <View style = { styles.mainView }>
-      <View style = { styles.autorizeView }>
-        <Text style = { styles.simpleText }>Вход в аккаунт</Text>
-        <View style = { styles.loginInputView }>
-          <Ionicons style = { styles.loginIcon } name = "person" size = { 24 } />
-          <TextInput 
-            style = { styles.loginInput } 
-            placeholder = 'Логин'
-            onChangeText = { (text) => setInputLogin(text) }/> 
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.mainView}>
+        <View style={styles.autorizeView}>
+          <Text style={styles.simpleText}>Вход в аккаунт</Text>
+          <View style={styles.loginInputView}>
+            <Ionicons style={styles.loginIcon} name="person" size={24} />
+            <TextInput
+              style={styles.loginInput}
+              placeholder="Логин"
+              onChangeText={(text) => setInputLogin(text)}
+            />
+          </View>
+          <View style={styles.passwordInputView}>
+            <View style={styles.passwordInputAndIcon}>
+              <FontAwesome style={styles.passwordIcon} name="lock" size={24} />
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Пароль"
+                secureTextEntry={isPasswordVisible}
+                autoCapitalize="none"
+                onChangeText={(text) => setInputPassword(text)}
+              />
+            </View>
+            <FontAwesome
+              name="eye"
+              style={styles.hidePassword}
+              size={24}
+              onPress={() => setIsPasswordVisible(false)}
+              onPressOut={() => setIsPasswordVisible(true)}
+            />
+          </View>
+          <Pressable style={styles.enterBtn} onPress={() => loginUser()}>
+            <Text style={styles.btnText}>ВОЙТИ</Text>
+          </Pressable>
         </View>
-        <View style = { styles.passwordInputView }>
-          <View style = { styles.passwordInputAndIcon }>
-            <FontAwesome style = { styles.passwordIcon } name = "lock" size = { 24 } />  
-            <TextInput 
-              style = { styles.passwordInput }
-              placeholder = 'Пароль'
-              secureTextEntry = { isPasswordVisible }
-              autoCapitalize = 'none'
-              onChangeText = { (text) => setInputPassword(text) }/>
-          </View>    
-          <FontAwesome 
-            name = "eye" 
-            style = { styles.hidePassword } 
-            size = { 24 } 
-            onPress = { () => setIsPasswordVisible(false) }
-            onPressOut = { () => setIsPasswordVisible(true) }/>
-        </View>
-        <Pressable style = { styles.enterBtn } onPress = { () => loginUser() }>
-          <Text style = { styles.btnText }>ВОЙТИ</Text>
-        </Pressable>
-      </View>  
 
-      <View style = { styles.registrateView }> 
-        <Text style = { styles.simpleRegText }>Нет аккаунта?</Text>
-        <Pressable style = { styles.regBtn } onPress = { () => navigation.navigate('Signup') }>
-          <Text style = { styles.btnText }>СОЗДАТЬ</Text>
-        </Pressable>
+        <View style={styles.registrateView}>
+          <Text style={styles.simpleRegText}>Нет аккаунта?</Text>
+          <Pressable
+            style={styles.regBtn}
+            onPress={() => navigation.navigate("Signup")}
+          >
+            <Text style={styles.btnText}>СОЗДАТЬ</Text>
+          </Pressable>
+        </View>
+
+        <Notification
+          type="success"
+          message="Успешно выполнено!"
+          fadeAnim={fadeSuccessAnim}
+        />
+        <Notification
+          type="error"
+          message="Произошла ошибка!"
+          fadeAnim={fadeErrorAnim}
+        />
       </View>
-
-      <Notification type = "success" message = "Успешно выполнено!"  fadeAnim = { fadeSuccessAnim } />
-      <Notification type = "error"  message = "Произошла ошибка!" fadeAnim = { fadeErrorAnim } />
-    </View>
-  )
+    </TouchableWithoutFeedback>
+  );
 }
 
 const styles = StyleSheet.create({
   mainView: {
     flex: 1,
-    justifyContent: 'center'
+    justifyContent: "center",
   },
   autorizeView: {
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.06)",
     marginHorizontal: 30,
     borderRadius: 15,
   },
@@ -129,69 +173,69 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginHorizontal: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: "rgba(0,0,0,0.06)",
   },
   simpleText: {
     fontSize: 22,
-    alignSelf: 'center',
-    fontFamily: 'mw-regular',
-    marginVertical: 20
+    alignSelf: "center",
+    fontFamily: "mw-regular",
+    marginVertical: 20,
   },
   simpleRegText: {
     fontSize: 20,
-    alignSelf: 'center',
-    fontFamily: 'mw-regular',
-    marginVertical: 10
+    alignSelf: "center",
+    fontFamily: "mw-regular",
+    marginVertical: 10,
   },
   loginInputView: {
     borderBottomWidth: 1,
     marginHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '70&'
+    flexDirection: "row",
+    alignItems: "center",
+    width: "70&",
   },
   loginInput: {
     fontSize: 19,
     padding: 5,
     paddingTop: 10,
     marginLeft: 5,
-    fontFamily: 'mw-italic',
-    placeholderTextColor: 'grey',
-    color: 'black',
+    fontFamily: "mw-italic",
+    placeholderTextColor: "grey",
+    color: "black",
   },
   loginIcon: {
-    color: 'black'
+    color: "black",
   },
   passwordInputView: {
     borderBottomWidth: 1,
     marginHorizontal: 15,
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   passwordInputAndIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   passwordInput: {
     padding: 5,
     fontSize: 19,
     paddingTop: 10,
     marginLeft: 3,
-    fontFamily: 'mw-italic',
-    placeholderTextColor: 'grey',
-    color: 'black',
+    fontFamily: "mw-italic",
+    placeholderTextColor: "grey",
+    color: "black",
   },
   passwordIcon: {
-    color: 'black',
-    padding: 5
+    color: "black",
+    padding: 5,
   },
   hidePassword: {
-    color: 'black'
+    color: "black",
   },
-  enterBtn: { 
-    backgroundColor: '#5258f2',
+  enterBtn: {
+    backgroundColor: "#5258f2",
     borderRadius: 15,
     borderWidth: 1,
     paddingVertical: 10,
@@ -201,13 +245,13 @@ const styles = StyleSheet.create({
   },
   btnText: {
     fontSize: 18,
-    color: 'white',
-    fontFamily: 'mw-regular',
-    textAlign: 'center',
-    padding: 5
+    color: "white",
+    fontFamily: "mw-regular",
+    textAlign: "center",
+    padding: 5,
   },
-  regBtn: { 
-    backgroundColor: '#5258f2',
+  regBtn: {
+    backgroundColor: "#5258f2",
     borderRadius: 15,
     borderWidth: 1,
     paddingVertical: 10,

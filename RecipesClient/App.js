@@ -2,6 +2,8 @@ import React, {useState} from 'react';
 import * as Font from 'expo-font'
 import MainStack from './navigate';
 import AppLoading from 'expo-app-loading'
+import { Provider } from 'react-redux';
+import { store } from './store/store';
 
 const fonts = () => Font.loadAsync({
   'mw-bold': require('./assets/fonts/Merriweather-Bold.ttf'),
@@ -15,7 +17,9 @@ export default function App({ navigation }) {
 
   if (font) {
     return (
-      <MainStack/>
+      <Provider store = { store }> 
+        <MainStack/>
+      </Provider>    
     );
   }
   else {
